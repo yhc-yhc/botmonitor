@@ -8,6 +8,11 @@ export default new Router({
   routes: [
     {
       path: '/',
+      name: 'botmonit',
+      component: resolve => require(['@/components/BotMonit'], resolve)
+    },
+    {
+      path: '/test',
       name: 'HelloWorld',
       component: HelloWorld
     }
