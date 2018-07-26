@@ -1,5 +1,12 @@
 <template>
   <div>
+    <Input v-model="UserId" placeholder="UserId" style="width: 300px"></Input>
+    <Input v-model="access_token" type="textarea" size="large" :autosize="{minRows: 1,maxRows: 2}" placeholder="access_token" style="width: 300px"></Input>
+    <Select v-model="contract" placeholder="Select your contract">
+      <Option value="BTC_USDT">BTC_USDT</Option>
+      <Option value="ETC_USDT">ETC_USDT</Option>
+      <Option value="ETH_USDT">ETH_USDT</Option>
+    </Select>
     <Table border height="400" :show-header="false" :columns="headers" :data="sellOrders"></Table>
     <Table border height="400" :columns="headers" :data="buyOrders"></Table>
   </div>
@@ -81,6 +88,7 @@ export default {
           }
         }
       ],
+      contract: 'BTC_USDT',
       sellOrders: [],
       buyOrders: [],
       UserId: '5a52790f40a1780e52659233',
@@ -94,25 +102,41 @@ export default {
       this.getOrders()
     }, 10000)
   },
+  watch: {
+    contract (newval, oldval) {
+      console.log(newval, oldval)
+      this.getOrders()
+    }
+  },
   methods: {
     getOrders () {
       this.$ajax.get('http://119.23.43.145:7443/rsporder/list', {
         timeout: 5000,
         params: {
-          Contract: 'ETC_USDT',
+          Contract: this.contract,
           UserId: this.UserId,
           access_token: this.access_token
         }
       }).then(rs => {
+        console.log(rs)
         const data = rs.data
         if (data.status) {
           const orders = data.data.filter(order => order.OrderStatus === 'Received' || order.OrderStatus === 'PartTradingQueueing')
           // console.log(orders)
           this.sellOrders = orders.filter(order => order.Side === 'Sell').sort((pre, cur) => new Date(cur.InsertPrice) - new Date(pre.InsertPrice))
           this.buyOrders = orders.filter(order => order.Side === 'Buy').sort((pre, cur) => new Date(cur.InsertPrice) - new Date(pre.InsertPrice))
+        } else {
+          this.$Notice.error({
+            title: data.errCode,
+            desc: data.message
+          })
         }
       }).catch(e => {
         console.log(e)
+        this.$Notice.error({
+          title: e.title || e.message,
+          desc: e.title || e.message || e.desc
+        })
       })
     },
 
