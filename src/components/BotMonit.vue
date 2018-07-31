@@ -3,9 +3,7 @@
     <Input v-model="UserId" placeholder="UserId" style="width: 300px"></Input>
     <Input v-model="access_token" type="textarea" size="large" :autosize="{minRows: 1,maxRows: 2}" placeholder="access_token" style="width: 300px"></Input>
     <Select v-model="contract" placeholder="Select your contract">
-      <Option value="BTC_USDT">BTC_USDT</Option>
-      <Option value="ETC_USDT">ETC_USDT</Option>
-      <Option value="ETH_USDT">ETH_USDT</Option>
+      <Option v-for="contract in contracts" :key="contract" :value="contract">{{contract}}</Option>
     </Select>
     <Table border height="400" :show-header="false" :columns="headers" :data="sellOrders"></Table>
     <Table border height="400" :columns="headers" :data="buyOrders"></Table>
@@ -88,7 +86,9 @@ export default {
           }
         }
       ],
+      host: 'http://119.23.43.145:7443',
       contract: 'BTC_USDT',
+      contracts: ['BTC_USDT'],
       sellOrders: [],
       buyOrders: [],
       UserId: '5a52790f40a1780e52659233',
@@ -97,6 +97,7 @@ export default {
     }
   },
   created () {
+    this.getContract()
     this.getOrders()
     setInterval(() => {
       this.getOrders()
@@ -109,8 +110,18 @@ export default {
     }
   },
   methods: {
+    getContract () {
+      this.$ajax.get(`${this.host}/contract/precision`).then(rs => {
+        console.log(rs.data)
+        const data = rs.data
+        if (data.status) {
+          this.contracts = data.data.map(item => item.TransactionCode)
+          console.log(this.contracts)
+        }
+      })
+    },
     getOrders () {
-      this.$ajax.get('http://119.23.43.145:7443/rsporder/list', {
+      this.$ajax.get(`${this.host}/rsporder/list`, {
         timeout: 5000,
         params: {
           Contract: this.contract,
@@ -142,7 +153,7 @@ export default {
 
     cancel (order) {
       console.log(order)
-      this.$ajax.post('http://119.23.43.145:7443/order/cancel', {
+      this.$ajax.post(`${this.host}/order/cancel`, {
         ClientOrderId: order.ClientOrderId,
         UserId: this.UserId,
         access_token: this.access_token
